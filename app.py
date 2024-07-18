@@ -4,8 +4,6 @@ from utils import logutils
 import interactions
 import os
 
-from utils.configstuff import ConfigHandler
-
 logger = logutils.CustomLogger(__name__)
 
 client = Client(
@@ -22,20 +20,6 @@ async def on_ready():
     logger.info(f"User ID: {client.app.id}")
     logger.info(f"Connected to {len(client.guilds)} guilds")
     logger.info(f"Connected to {client.guilds}")
-    guilds_data = []
-    for guild in client.guilds:
-        guild_data = {
-            'id': str(guild.id),
-            'name': guild.name,
-            'icon': str(guild.icon.as_url()) if guild.icon else None
-        }
-        guilds_data.append(guild_data)
-    with open('guilds.json', 'w') as f:
-        json.dump(guilds_data, f)
-    for guild in client.guilds:
-        config_handler = ConfigHandler(str(guild.id))
-        if not config_handler.get_config():
-            config_handler.update_config({})
 
 
 if __name__ == '__main__':
