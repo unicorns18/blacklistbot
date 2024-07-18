@@ -24,7 +24,7 @@ class UtilityExtension(Extension):
     
     @interactions.component_callback("verify")
     async def verify_callback(self, ctx: ComponentContext):
-        role = ctx.guild.get_role()
+        role = ctx.guild.get_role(self.roleid)
         if role is None:
             # Unicorns
             user = await self.bot.fetch_user(968929214281683035)
