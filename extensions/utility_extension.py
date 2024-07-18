@@ -58,4 +58,5 @@ class UtilityExtension(Extension):
         server_id = str(ctx.guild.id)
         self.load_config(server_id)
         print(self.roleid, self.logToChannel, self.logChannel)
+        print("test branch shit")
         await ctx.send(f"Server ID: {server_id}\nRole ID: {self.roleid}\nLog to Channel: {self.logToChannel}\nLog Channel: {self.logChannel}", ephemeral=True)
