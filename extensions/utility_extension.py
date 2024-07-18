@@ -1,23 +1,19 @@
-from utils.configstuff import ConfigHandler
 from interactions import Button, ButtonStyle, ComponentContext, Embed, EmbedField, Extension, Color
 import interactions
 
 class UtilityExtension(Extension):
     def __init__(self, bot):
         self.bot = bot
-    
-    def load_config(self, server_id):
-        print(f"server_id: {server_id}")
-        config_handler = ConfigHandler(server_id)
-        config = config_handler.get_config()
-        self.roleid = config.get('roleid', 0)
-        self.logToChannel = config.get('logToChannel', False)
-        self.logChannel = config.get('logChannel', 0)
+        
+        # buyer role id
+        self.roleid = 1262853951691296858
+        # log to channel = true
+        self.logToChannel = True
+        # log channel id
+        self.logChannel = 1262965364929728564
     
     @interactions.slash_command(name="sendrules", description="Send the rules of the server")
     async def send_(self, ctx):
-        server_id = str(ctx.guild.id)
-        self.load_config(server_id)
         embed = Embed(title="Rules", description="Here are the rules of the server", color=Color.from_rgb(0, 0, 0),
                       fields=[EmbedField(name=f"Rule {i}", value=rule) for i, rule in enumerate([
                           "Respect my boundaries", "Do not share pictures without my consent",
@@ -28,10 +24,7 @@ class UtilityExtension(Extension):
     
     @interactions.component_callback("verify")
     async def verify_callback(self, ctx: ComponentContext):
-        server_id = str(ctx.guild.id)
-        self.load_config(server_id)
-        
-        role = ctx.guild.get_role(self.roleid)
+        role = ctx.guild.get_role()
         if role is None:
             # Unicorns
             user = await self.bot.fetch_user(968929214281683035)
@@ -52,10 +45,3 @@ class UtilityExtension(Extension):
                     await log_channel.send(embed=embed)
         else:
             await ctx.send("You are already verified!", ephemeral=True)
-    
-    @interactions.slash_command(name="testconfig", description="Test the configuration values")
-    async def test_config(self, ctx):
-        server_id = str(ctx.guild.id)
-        self.load_config(server_id)
-        print(self.roleid, self.logToChannel, self.logChannel)
-        await ctx.send(f"Server ID: {server_id}\nRole ID: {self.roleid}\nLog to Channel: {self.logToChannel}\nLog Channel: {self.logChannel}", ephemeral=True)
