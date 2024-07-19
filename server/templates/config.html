@@ -4,7 +4,6 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/output.css') }}">
-        <script src="{{ url_for('static', filename='js/config.js') }}"></script>
         <title>bot</title>
         <style>
             .server-list {
@@ -105,34 +104,6 @@
             <div class="w-3/4 p-8">
                 {% if current_server_id %}
                     {% block content %}
-                    <div class="flex flex-col items-center">
-                        <h1 class="text-2xl font-bold mb-4">Configuration for {{ server.name }}</h1>
-
-                        <div class="w-full max-w-lg">
-                            <div class="mb-6">
-                                <label for="prefix" class="block text-sm font-medium text-gray-300">Prefix:</label>
-                                <div class="mt-1">
-                                    <input type="text" name="prefix" id="prefix" value="{{ server.prefix }}" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-600 bg-gray-700 text-white rounded-md py-2 px-3">
-                                </div>  
-                            </div>
-
-                            <div class="mb-6">
-                                <label for="log_channel" class="block text-sm font-medium text-gray-300">Log Channel ID:</label>
-                                <div class="mt-1 flex items-center">
-                                    <input type="text" name="log_channel" id="log_channel" value="{{ server.log_channel }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-600 bg-gray-700 text-white rounded-md py-2 px-3 mr-2" style="width: 300px;">
-                                    <button id="logChannelBtn" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        Set Log Channel
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mt-8 fixed bottom-8 right-8">
-                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                Save
-                            </button>
-                        </div>
-                    </div>
                     {% endblock %}
                 {% else %}
                     <h2 class="text-center text-3xl font-extrabold text-white">Select a server to configure</h2>
