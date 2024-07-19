@@ -44,4 +44,14 @@ class UtilityExtension(Extension):
                     embed = Embed(title="User Verified", color=Color.random(), fields=[EmbedField(name="User", value=f"{ctx.author.mention} ({ctx.author.id})"), EmbedField(name="Account Created", value=f"<t:{int(ctx.author.created_at.timestamp())}:F>"), EmbedField(name="Joined Server", value=f"<t:{int(ctx.author.joined_at.timestamp())}:F>")], thumbnail=ctx.author.avatar_url, footer=f"User ID: {ctx.author.id}")
                     await log_channel.send(embed=embed)
         else:
+    
             await ctx.send("You are already verified!", ephemeral=True)
+
+    
+    @interactions.slash_command(name="testconfig", description="Test the configuration values")
+    async def test_config(self, ctx):
+        server_id = str(ctx.guild.id)
+        self.load_config(server_id)
+        print(self.roleid, self.logToChannel, self.logChannel)
+        print("test branch shit")
+        await ctx.send(f"Server ID: {server_id}\nRole ID: {self.roleid}\nLog to Channel: {self.logToChannel}\nLog Channel: {self.logChannel}", ephemeral=True)
