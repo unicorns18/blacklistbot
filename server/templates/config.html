@@ -3,38 +3,160 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel= "stylesheet" type= "text/css" href= "{{ url_for('static',filename='styles/output.css') }}">
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/output.css') }}">
+        <script src="{{ url_for('static', filename='js/config.js') }}"></script>
         <title>bot</title>
         <style>
-            .glow {
-                box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.8);
+            .server-list {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem;
+                border-left: 2px solid rgba(75, 85, 99, 0.25);
+                border-right: 2px solid rgba(75, 85, 99, 0.25);
+                border-radius: 0.5rem;
+                position: relative;
+                transition: width 0.3s ease-in-out;
+            }
+            
+            .server-list::before,
+            .server-list::after {
+                content: "";
+                position: absolute;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background-color: rgba(75, 85, 99, 0.25);
+            }
+            
+            .server-list::before {
+                top: 0;
+            }
+            
+            .server-list::after {
+                bottom: 0;
+            }
+            
+            .server-item {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.5rem;
+                border-radius: 0.5rem;
+                transition: box-shadow 0.2s ease-in-out;
+            }
+            
+            .server-item:hover {
+                box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.8);
+            }
+            
+            .server-item.active {
+                box-shadow: 0 0 5px 2px rgba(255, 255, 255, 0.8);
+            }
+            
+            .server-icon {
+                width: 4rem;
+                height: 4rem;
+                border-radius: 50%;
+                background-color: #4b5563;
+            }
+            
+            .server-icon img {
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+
+            .collapsed .server-item {
+                justify-content: center;
+                padding: 1.5rem;
+            }
+
+            .collapsed .server-name {
+                display: none;
             }
         </style>
     </head>
     <body class="bg-[#0f0f0f] text-white">
         <div class="min-h-screen flex">
-            <div class="w-1/4 bg-gray-800 p-4">
-                <h2 class="text-2xl font-bold mb-4">Servers</h2>
-                <ul>
+            <div id="serverList" class="w-1/4 bg-gray-800 p-4 transition-all duration-300 ease-in-out">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 id="serversTitle" class="text-2xl font-bold">Servers</h2>
+                    <button id="collapseBtn" class="text-white focus:outline-none">
+                        <svg id="collapseSvg" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="server-list">
                     {% for server in servers %}
-                    <li class="mb-4">
-                        <a href="{{ url_for('config', server_id=server.id) }}" class="flex items-center {% if server.id == current_server_id %}glow{% endif %}">
+                    <a href="{{ url_for('config', server_id=server.id) }}" class="server-item {% if server.id == current_server_id %}active{% endif %}">
+                        <div class="server-icon">
                             {% if server.icon %}
-                            <img src="{{ server.icon }}" alt="{{ server.name }}" class="w-12 h-12 rounded-full mr-4">
-                            {% else %}
-                            <div class="w-12 h-12 bg-gray-700 rounded-full mr-4"></div>
+                            <img src="{{ server.icon }}" alt="{{ server.name }}">
                             {% endif %}
-                            <span>{{ server.name }}</span>
-                        </a>
-                    </li>
+                        </div>
+                        <span class="server-name">{{ server.name }}</span>
+                    </a>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
             <div class="w-3/4 p-8">
-                {% block content %}
-                <h2 class="text-center text-3xl font-extrabold text-white">Select a server to configure</h2>
-                {% endblock %}
+                {% if current_server_id %}
+                    {% block content %}
+                    <div class="flex flex-col items-center">
+                        <h1 class="text-2xl font-bold mb-4">Configuration for {{ server.name }}</h1>
+
+                        <div class="w-full max-w-lg">
+                            <div class="mb-6">
+                                <label for="prefix" class="block text-sm font-medium text-gray-300">Prefix:</label>
+                                <div class="mt-1">
+                                    <input type="text" name="prefix" id="prefix" value="{{ server.prefix }}" class="w-16 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block sm:text-sm border-gray-600 bg-gray-700 text-white rounded-md py-2 px-3">
+                                </div>  
+                            </div>
+
+                            <div class="mb-6">
+                                <label for="log_channel" class="block text-sm font-medium text-gray-300">Log Channel ID:</label>
+                                <div class="mt-1 flex items-center">
+                                    <input type="text" name="log_channel" id="log_channel" value="{{ server.log_channel }}" class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-600 bg-gray-700 text-white rounded-md py-2 px-3 mr-2" style="width: 300px;">
+                                    <button id="logChannelBtn" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        Set Log Channel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 fixed bottom-8 right-8">
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                    {% endblock %}
+                {% else %}
+                    <h2 class="text-center text-3xl font-extrabold text-white">Select a server to configure</h2>
+                {% endif %}
             </div>
         </div>
+        <script>
+            const serverList = document.getElementById('serverList');
+            const collapseBtn = document.getElementById('collapseBtn');
+            const collapseSvg = document.getElementById('collapseSvg');
+            const serversTitle = document.getElementById('serversTitle');
+
+            collapseBtn.addEventListener('click', () => {
+                serverList.classList.toggle('w-1/4');
+                serverList.classList.toggle('w-42');
+                serverList.classList.toggle('collapsed');
+                serversTitle.classList.toggle('hidden');
+                
+                if (serverList.classList.contains('collapsed')) {
+                    collapseSvg.setAttribute('d', 'M9 5l7 7-7 7');
+                } else {
+                    collapseSvg.setAttribute('d', 'M15 19l-7-7 7-7');
+                }
+            });
+        </script>
     </body>
 </html>

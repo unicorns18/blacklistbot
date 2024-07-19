@@ -8,6 +8,7 @@ app = Flask(__name__, template_folder='templates')
 @app.route('/')
 def home():
     servers = load_servers()
+    current_server_id = None
     return render_template('config.html', servers=servers, current_server_id=None)
 
 @app.route('/config/<server_id>')

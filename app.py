@@ -8,8 +8,10 @@ from utils.configstuff import ConfigHandler
 
 logger = logutils.CustomLogger(__name__)
 
+DEBUG = True
+
 client = Client(
-    token="MTI2MjYyOTcyNDgwNzc2MTk1NA.G_sV1b.lZwZZEnM2Wd7c3MYFKjfHs1QA3T6ujFBCb2JhI",
+    token="MTI2MjYyOTcyNDgwNzc2MTk1NA.G_sV1b.lZwZZEnM2Wd7c3MYFKjfHs1QA3T6ujFBCb2JhI" if not DEBUG else "MTI2MzY1NjA2NzQ1NjMwMzExNA.Gw_J_x.SHynfkOECNhZVcwbZGCoTiJs02kDwCAU4lYkTE",
     intents=interactions.Intents.ALL,
     activity=interactions.Activity(
         name="Peekaboo", type=interactions.ActivityType.PLAYING
