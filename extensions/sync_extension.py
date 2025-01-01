@@ -110,35 +110,119 @@ class SyncBlacklistsExtension(Extension):
         await ctx.send(f"Synced {guild_synced_count} blacklisted users in this guild. Channel ID: {blacklist_channel.id}", ephemeral=True)
         await ctx.edit(content="Syncing blacklists completed.", message=msg)
 
-    async def try_ban(self,guild,user_id):
+    async def try_ban(self, guild, user_id):
         try:
+            # Attempt to ban
             await guild.ban(user_id, reason="Blacklisted by the bot.")
-            return True
+            
+            # Verify the ban by checking ban list
+            try:
+                ban_entry = await guild.fetch_ban(user_id)
+                if ban_entry:
+                    return True, None
+                return False, "Ban verification failed - user not found in ban list"
+            except Exception as e:
+                return False, f"Ban verification failed: {str(e)}"
+                
         except (interactions.errors.Forbidden, interactions.errors.HTTPException, Exception) as e:
-            print(f"Error banning user {user_id} in guild {guild.id}: {e}")
-            return False
+            error_msg = f"Error banning user {user_id} in guild {guild.id}: {e}"
+            print(error_msg)
+            return False, error_msg
     
     @interactions.slash_command(name="syncbans", description="Syncs the bot's blacklists to the channel and server.")
     async def syncbans(self, ctx: interactions.SlashContext):
+        import asyncio
+        import random
+
+        # Basic permission checks first
         if not await self.is_user_whitelisted(ctx.author.id):
             return await ctx.send("You are not whitelisted!", ephemeral=True)
-        await ctx.defer(ephemeral=True)
-        keys_values: Dict[str, Dict[str, str]] = self.db.list_all_users_info()
-        if not keys_values: return await ctx.send("There are no blacklisted users.", ephemeral=True)
+        
         guild = ctx.guild
-        if not guild: return await ctx.send("This command cannot be used in DMs.", ephemeral=True)
-        if not guild.me.guild_permissions.BAN_MEMBERS: return await ctx.send("I do not have permission to ban members in this server.", ephemeral=True)
+        if not guild:
+            return await ctx.send("This command cannot be used in DMs.", ephemeral=True)
+        
+        if not guild.me.guild_permissions.BAN_MEMBERS:
+            return await ctx.send("I do not have permission to ban members in this server.", ephemeral=True)
+        
+        # Get blacklist data
+        keys_values: Dict[str, Dict[str, str]] = self.db.list_all_users_info()
+        if not keys_values:
+            return await ctx.send("There are no blacklisted users.", ephemeral=True)
+        
+        # Check if already synced
         current_sync_hash: str = sha256(str(keys_values).encode('utf-8')).hexdigest()
-        print(f"current_sync_hash: {current_sync_hash}")
         if self.db_servers.check_if_guild_synced(str(guild.id), current_sync_hash):
             sync_details: Dict[str, str] = self.db_servers.get_sync_details(str(guild.id))
-            print(f"sync_details: {sync_details}")
-            return await ctx.send(f"Blacklist in this guild is already up to date. Channel ID: {sync_details.get('channel_id', 'N/A')}, Users Synced: {sync_details.get('count', 'N/A')}", ephemeral=True)
-        guild_synced_count: int = 0
+            channel_id = sync_details.get('channel_id', 'N/A')
+            count = sync_details.get('count', 'N/A')
+            sync_msg = (
+                f"✅ Blacklist in this guild is already up to date.\n"
+                f"Channel ID: {channel_id}\n"
+                f"Users Synced: {count}"
+            )
+            return await ctx.send(sync_msg, ephemeral=True)
+
+        # Start sync process
+        await ctx.defer(ephemeral=True)
+        msg = await ctx.send("🔄 Initializing sync process...", ephemeral=True)
+        
+        # Filter out whitelisted users
+        users_to_ban = []
         for user_id in keys_values.keys():
             if not await self.is_user_whitelisted(user_id):
-                if await self.try_ban(guild, user_id): guild_synced_count += 1
-        await ctx.send(f"Synced {guild_synced_count} blacklisted users in this guild.", ephemeral=True)
+                users_to_ban.append(user_id)
+        
+        total_users = len(users_to_ban)
+        if total_users == 0:
+            await msg.edit(content="✅ No users to ban - all users are whitelisted.")
+            return
+            
+        successful_bans = 0
+        failed_bans = 0
+        failed_details = []
+
+        await msg.edit(content=f"🔄 Starting sync process for {total_users} users...")
+
+        for i, user_id in enumerate(users_to_ban, 1):
+            # Update progress
+            progress_msg = (
+                f"🔄 Syncing bans... Progress: {i}/{total_users}\n"
+                f"✅ Successful: {successful_bans}\n"
+                f"❌ Failed: {failed_bans}"
+            )
+            await msg.edit(content=progress_msg)
+
+            success, error = await self.try_ban(guild, user_id)
+            if success:
+                successful_bans += 1
+            else:
+                failed_bans += 1
+                failed_details.append(f"User {user_id}: {error}")
+
+            # Random cooldown between 10-15 seconds
+            if i < total_users:  # Don't sleep after last ban
+                await asyncio.sleep(random.uniform(10, 15))
+
+        # Final status message
+        status_msg = (
+            f"Sync complete!\n"
+            f"✅ Successfully banned in {successful_bans}/{total_users} attempts\n"
+            f"❌ Failed in {failed_bans} attempts\n"
+        )
+        
+        if failed_details:
+            status_msg += "\nFailed ban details:\n" + "\n".join(failed_details[:10])  # Show first 10 failures
+            if len(failed_details) > 10:
+                status_msg += f"\n...and {len(failed_details) - 10} more failures"
+
+        # Record sync details
+        if successful_bans > 0:
+            self.db_servers.set_last_sync_details(str(guild.id), current_sync_hash)
+            self.db_servers.record_sync_details(str(guild.id), str(guild.id), str(successful_bans))
+
+        await msg.edit(content="✅ Sync process completed!")
+        await ctx.send(status_msg, ephemeral=True)
     
     @interactions.slash_command(name="purge", description="purges all embeds and messages in channel")
     async def purge(self, ctx: interactions.SlashContext):
